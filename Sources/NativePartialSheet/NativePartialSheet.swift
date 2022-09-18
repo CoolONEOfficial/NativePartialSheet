@@ -4,9 +4,11 @@ import UIKit
 import SwiftUI
 
 public enum Detent {
+    public static let defaultId = "default_id"
+    
     case medium
     case large
-    case custom(id: String = "id", constant: CGFloat)
+    case custom(id: String = Detent.defaultId, constant: CGFloat)
 
     var system: UISheetPresentationController.Detent {
         switch self {
@@ -17,7 +19,11 @@ public enum Detent {
             return .large()
 
         case let .custom(id, constant):
-            return ._detent(withIdentifier: id, constant: constant) //ios 16 .custom(resolver: {_ in int})
+            if #available(iOS 16.0, *) {
+                return .custom(identifier: id == Detent.defaultId ? nil : .init(rawValue: id), resolver: {_ in constant})
+            } else {
+                return ._detent(withIdentifier: id, constant: constant)
+            }
         }
     }
 }
