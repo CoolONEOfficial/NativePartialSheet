@@ -28,7 +28,7 @@ public enum Detent {
     }
 }
 
-public class PartialSheetController<Content>: UIHostingController<Content> where Content : View {
+public class NativePartialSheetController<Content>: UIHostingController<Content> where Content : View {
     var detents: [Detent] = []
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -43,7 +43,7 @@ public class PartialSheetController<Content>: UIHostingController<Content> where
     }
 }
 
-public struct PartialSheet<Content>: UIViewControllerRepresentable where Content : View {
+public struct NativePartialSheet<Content>: UIViewControllerRepresentable where Content : View {
 
     public let content: Content
     public let detents: [Detent]
@@ -53,12 +53,12 @@ public struct PartialSheet<Content>: UIViewControllerRepresentable where Content
         self.detents = detents
     }
 
-    public func makeUIViewController(context: Context) -> PartialSheetController<Content> {
-        let viewController = PartialSheetController(rootView: content)
+    public func makeUIViewController(context: Context) -> NativePartialSheetController<Content> {
+        let viewController = NativePartialSheetController(rootView: content)
         viewController.detents = detents
         return viewController
     }
 
-    public func updateUIViewController(_: PartialSheetController<Content>, context: Context) {
+    public func updateUIViewController(_: NativePartialSheetController<Content>, context: Context) {
     }
 }
