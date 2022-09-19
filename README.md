@@ -9,13 +9,29 @@ import SwiftUI
 import NativePartialSheet
 
 struct MyView: View {
-    @State var isPresented = true
+    @State var isPresented = false
+    @State var selectedDetentId: UISheetPresentationController.Detent.Identifier? = .large
 
     var body: some View {
-        Text("Hello, World!")
+        Text("Open sheet")
+            .onTapGesture {
+                isPresented = true
+            }
             .sheet(isPresented: $isPresented) {
-                NativePartialSheet(detents: [ .custom(constant: 100), .medium, .large ]) {
-                    Text("Hello, World!")
+                NativePartialSheet( // all params not required
+                    detents: [Detent] = [.medium, .large, .custom(id: "myid", constant: 100)],
+                    preferredCornerRadius: 32,
+                    prefersGrabberVisible: false,
+                    prefersEdgeAttachedInCompactHeight: false,
+                    prefersScrollingExpandsWhenScrolledToEdge: true,
+                    widthFollowsPreferredContentSizeWhenEdgeAttached: false,
+                    largestUndimmedDetentIdentifier: .medium,
+                    selectedDetentIdentifier: $selectedDetentId
+                ) {
+                    Text("Set custom height")
+                        .onTapGesture {
+                            selectedDetentId = .init(rawValue: "myid") // animated by default
+                        }
                         .interactiveDismissDisabled()
                 }
             }
