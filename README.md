@@ -5,12 +5,42 @@ Main feature of this library - native support of ***custom*** SwiftUI's presenta
 ## Simple example
 
 ```swift
-import SwiftUI
-import NativePartialSheet
+extension Detent {
+    static let customCompact: Detent = .custom(constant: 100)
+}
 
 struct MyView: View {
     @State var isPresented = false
-    @State var selectedDetentId: UISheetPresentationController.Detent.Identifier? = .large
+
+    var body: some View {
+        Text("Open sheet")
+            .onTapGesture {
+                isPresented = true
+            }
+            .sheet(isPresented: $isPresented) {
+                NativePartialSheet() {
+                    Text("Hello world")
+                        .interactiveDismissDisabled()
+                }
+            }
+    }
+}
+```
+
+## Advanced example
+
+```
+import NativePartialSheet
+import SwiftUI
+
+extension Detent { // complile time static detents
+    static let customCompact: Detent = .custom(constant: 100)
+}
+
+struct MyView: View {
+    @State var isPresented = false
+    @State var selectedDetent: Detent? = .customCompact
+    @State var detents: [Detent] = [.large, .customCompact]
 
     var body: some View {
         Text("Open sheet")
@@ -19,20 +49,23 @@ struct MyView: View {
             }
             .sheet(isPresented: $isPresented) {
                 NativePartialSheet( // all params not required
-                    detents: [Detent] = [.medium, .large, .custom(id: "myid", constant: 100)],
+                    detents: detents,
                     preferredCornerRadius: 32,
                     prefersGrabberVisible: false,
                     prefersEdgeAttachedInCompactHeight: false,
                     prefersScrollingExpandsWhenScrolledToEdge: true,
                     widthFollowsPreferredContentSizeWhenEdgeAttached: false,
-                    largestUndimmedDetentIdentifier: .medium,
-                    selectedDetentIdentifier: $selectedDetentId
+                    largestUndimmedDetent: .medium,
+                    selectedDetent: $selectedDetent
                 ) {
-                    Text("Set custom height")
-                        .onTapGesture {
-                            selectedDetentId = .init(rawValue: "myid") // animated by default
-                        }
+                    Text("Hello world")
                         .interactiveDismissDisabled()
+                }
+                .onAppear {
+                    // runtime calculated detent
+                    let newDetent: Detent = .custom(constant: .init(400))
+                    detents.append(newDetent)
+                    selectedDetent = newDetent // animated by default
                 }
             }
     }

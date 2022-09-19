@@ -7,6 +7,21 @@ public enum Detent {
     case medium
     case large
     case custom(id: String = UUID().uuidString, constant: CGFloat)
+}
+
+extension Detent {
+    public var id: UISheetPresentationController.Detent.Identifier {
+        switch self {
+        case .medium:
+            return .medium
+
+        case .large:
+            return .large
+
+        case let .custom(id, _):
+            return .init(id)
+        }
+    }
 
     var system: UISheetPresentationController.Detent {
         switch self {
@@ -33,8 +48,8 @@ private protocol Preferences {
     var prefersEdgeAttachedInCompactHeight: Bool { get }
     var prefersScrollingExpandsWhenScrolledToEdge: Bool { get }
     var widthFollowsPreferredContentSizeWhenEdgeAttached: Bool { get }
-    var largestUndimmedDetentIdentifier: UISheetPresentationController.Detent.Identifier? { get }
-    var selectedDetentIdentifier: Binding<UISheetPresentationController.Detent.Identifier?> { get }
+    var largestUndimmedDetent: Detent? { get }
+    var selectedDetent: Binding<Detent?> { get }
 }
 
 public class NativePartialSheetController<Content>: UIHostingController<Content>, UISheetPresentationControllerDelegate where Content : View {
@@ -47,19 +62,31 @@ public class NativePartialSheetController<Content>: UIHostingController<Content>
            let prefs = prefs {
             presentation.detents = prefs.detents.map(\.system)
             presentation.prefersGrabberVisible = prefs.prefersGrabberVisible
-            presentation.largestUndimmedDetentIdentifier = prefs.largestUndimmedDetentIdentifier
+            presentation.largestUndimmedDetentIdentifier = prefs.largestUndimmedDetent?.id
             presentation.preferredCornerRadius = prefs.preferredCornerRadius
             presentation.prefersEdgeAttachedInCompactHeight = prefs.prefersEdgeAttachedInCompactHeight
             presentation.prefersScrollingExpandsWhenScrolledToEdge = prefs.prefersScrollingExpandsWhenScrolledToEdge
             presentation.widthFollowsPreferredContentSizeWhenEdgeAttached = prefs.widthFollowsPreferredContentSizeWhenEdgeAttached
-            presentation.selectedDetentIdentifier = prefs.selectedDetentIdentifier.wrappedValue
+            presentation.selectedDetentIdentifier = prefs.selectedDetent.wrappedValue?.id
             presentation.delegate = self
         }
         isModalInPresentation = true
     }
     
     public func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
-        prefs?.selectedDetentIdentifier.wrappedValue = sheetPresentationController.selectedDetentIdentifier
+        prefs?.selectedDetent.wrappedValue = prefs?.detents.first { $0.id == sheetPresentationController.selectedDetentIdentifier }
+    }
+}
+
+extension UISheetPresentationController.Detent {
+    var myIdentifier: Identifier {
+        if #available(iOS 16.0, *) {
+            return self.identifier
+        } else {
+            let test = value(forKey: "identifier")
+            debugPrint("ffdf")
+            return test as! Identifier
+        }
     }
 }
 
@@ -71,8 +98,8 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
     let prefersEdgeAttachedInCompactHeight: Bool
     let prefersScrollingExpandsWhenScrolledToEdge: Bool
     let widthFollowsPreferredContentSizeWhenEdgeAttached: Bool
-    let largestUndimmedDetentIdentifier: UISheetPresentationController.Detent.Identifier?
-    let selectedDetentIdentifier: Binding<UISheetPresentationController.Detent.Identifier?>
+    var largestUndimmedDetent: Detent?
+    let selectedDetent: Binding<Detent?>
     
     public init(
         detents: [Detent] = [.medium, .large],
@@ -81,8 +108,8 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
         prefersEdgeAttachedInCompactHeight: Bool = false,
         prefersScrollingExpandsWhenScrolledToEdge: Bool = true,
         widthFollowsPreferredContentSizeWhenEdgeAttached: Bool = false,
-        largestUndimmedDetentIdentifier: UISheetPresentationController.Detent.Identifier? = nil,
-        selectedDetentIdentifier: Binding<UISheetPresentationController.Detent.Identifier?> = .init(get: { nil }, set: { _ in }),
+        largestUndimmedDetent: Detent? = nil,
+        selectedDetent: Binding<Detent?> = .init(get: { nil }, set: { _ in }),
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()
@@ -92,8 +119,8 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
         self.prefersEdgeAttachedInCompactHeight = prefersEdgeAttachedInCompactHeight
         self.prefersScrollingExpandsWhenScrolledToEdge = prefersScrollingExpandsWhenScrolledToEdge
         self.widthFollowsPreferredContentSizeWhenEdgeAttached = widthFollowsPreferredContentSizeWhenEdgeAttached
-        self.largestUndimmedDetentIdentifier = largestUndimmedDetentIdentifier
-        self.selectedDetentIdentifier = selectedDetentIdentifier
+        self.largestUndimmedDetent = largestUndimmedDetent
+        self.selectedDetent = selectedDetent
     }
 
     public func makeUIViewController(context: Context) -> NativePartialSheetController<Content> {
@@ -103,8 +130,12 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
     }
 
     public func updateUIViewController(_ viewController: NativePartialSheetController<Content>, context: Context) {
-        viewController.sheetPresentationController?.animateChanges {
-            viewController.sheetPresentationController?.selectedDetentIdentifier = selectedDetentIdentifier.wrappedValue
+        if let presentation = viewController.sheetPresentationController {
+            presentation.detents = detents.map(\.system)
+            presentation.animateChanges {
+                presentation.selectedDetentIdentifier = selectedDetent.wrappedValue?.id
+            }
         }
+        
     }
 }
