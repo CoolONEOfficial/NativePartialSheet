@@ -14,7 +14,7 @@ struct MyView: View {
     var body: some View {
         Text("Hello, World!")
             .sheet(isPresented: $isPresented) {
-                NativePartialSheet(detents: [ .custom(constant: 100), .medium, .large ]) { // if >1 custom detent specify custom id per each of it
+                NativePartialSheet(detents: [ .custom(constant: 100), .medium, .large ]) {
                     Text("Hello, World!")
                         .interactiveDismissDisabled()
                 }

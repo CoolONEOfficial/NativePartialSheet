@@ -4,11 +4,9 @@ import UIKit
 import SwiftUI
 
 public enum Detent {
-    public static let defaultId = "default_id"
-    
     case medium
     case large
-    case custom(id: String = Detent.defaultId, constant: CGFloat)
+    case custom(id: String = UUID().uuidString, constant: CGFloat)
 
     var system: UISheetPresentationController.Detent {
         switch self {
@@ -20,7 +18,7 @@ public enum Detent {
 
         case let .custom(id, constant):
             if #available(iOS 16.0, *) {
-                return .custom(identifier: id == Detent.defaultId ? nil : .init(rawValue: id), resolver: {_ in constant})
+                return .custom(identifier: .init(rawValue: id), resolver: {_ in constant})
             } else {
                 return ._detent(withIdentifier: id, constant: constant)
             }
@@ -28,34 +26,74 @@ public enum Detent {
     }
 }
 
+private protocol Preferences {
+    var detents: [Detent] { get }
+    var preferredCornerRadius: CGFloat? { get }
+    var prefersGrabberVisible: Bool { get }
+    var prefersEdgeAttachedInCompactHeight: Bool { get }
+    var prefersScrollingExpandsWhenScrolledToEdge: Bool { get }
+    var widthFollowsPreferredContentSizeWhenEdgeAttached: Bool { get }
+    var largestUndimmedDetentIdentifier: UISheetPresentationController.Detent.Identifier? { get }
+    var selectedDetentIdentifier: UISheetPresentationController.Detent.Identifier? { get }
+}
+
 public class NativePartialSheetController<Content>: UIHostingController<Content> where Content : View {
-    var detents: [Detent] = []
+    fileprivate var prefs: Preferences?
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if let presentation = sheetPresentationController {
-            presentation.detents = detents.map(\.system)
-            presentation.prefersGrabberVisible = true
-            presentation.largestUndimmedDetentIdentifier = .medium
+        if let presentation = sheetPresentationController,
+           let prefs = prefs {
+            presentation.detents = prefs.detents.map(\.system)
+            presentation.prefersGrabberVisible = prefs.prefersGrabberVisible
+            presentation.largestUndimmedDetentIdentifier = prefs.largestUndimmedDetentIdentifier
+            presentation.preferredCornerRadius = prefs.preferredCornerRadius
+            presentation.prefersEdgeAttachedInCompactHeight = prefs.prefersEdgeAttachedInCompactHeight
+            presentation.prefersScrollingExpandsWhenScrolledToEdge = prefs.prefersScrollingExpandsWhenScrolledToEdge
+            presentation.widthFollowsPreferredContentSizeWhenEdgeAttached = prefs.widthFollowsPreferredContentSizeWhenEdgeAttached
+            presentation.selectedDetentIdentifier = prefs.selectedDetentIdentifier
         }
         isModalInPresentation = true
     }
 }
 
-public struct NativePartialSheet<Content>: UIViewControllerRepresentable where Content : View {
+public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresentable where Content : View {
+    private let content: Content
+    let detents: [Detent]
+    let preferredCornerRadius: CGFloat?
+    let prefersGrabberVisible: Bool
+    let prefersEdgeAttachedInCompactHeight: Bool
+    let prefersScrollingExpandsWhenScrolledToEdge: Bool
+    let widthFollowsPreferredContentSizeWhenEdgeAttached: Bool
+    let largestUndimmedDetentIdentifier: UISheetPresentationController.Detent.Identifier?
+    let selectedDetentIdentifier: UISheetPresentationController.Detent.Identifier?
 
-    public let content: Content
-    public let detents: [Detent]
-
-    @inlinable public init(detents: [Detent], @ViewBuilder content: () -> Content) {
+    public init(
+        detents: [Detent] = [.medium, .large],
+        preferredCornerRadius: CGFloat? = nil,
+        prefersGrabberVisible: Bool = false,
+        prefersEdgeAttachedInCompactHeight: Bool = false,
+        prefersScrollingExpandsWhenScrolledToEdge: Bool = true,
+        widthFollowsPreferredContentSizeWhenEdgeAttached: Bool = false,
+        largestUndimmedDetentIdentifier: UISheetPresentationController.Detent.Identifier? = nil,
+        selectedDetentIdentifier: UISheetPresentationController.Detent.Identifier? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
         self.content = content()
         self.detents = detents
+        self.preferredCornerRadius = preferredCornerRadius
+        self.prefersGrabberVisible = prefersGrabberVisible
+        self.prefersEdgeAttachedInCompactHeight = prefersEdgeAttachedInCompactHeight
+        self.prefersScrollingExpandsWhenScrolledToEdge = prefersScrollingExpandsWhenScrolledToEdge
+        self.widthFollowsPreferredContentSizeWhenEdgeAttached = widthFollowsPreferredContentSizeWhenEdgeAttached
+        self.largestUndimmedDetentIdentifier = largestUndimmedDetentIdentifier
+        self.selectedDetentIdentifier = selectedDetentIdentifier
     }
 
     public func makeUIViewController(context: Context) -> NativePartialSheetController<Content> {
         let viewController = NativePartialSheetController(rootView: content)
-        viewController.detents = detents
+        viewController.prefs = self
         return viewController
     }
 
