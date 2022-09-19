@@ -29,7 +29,7 @@ struct MyView: View {
 
 ## Advanced example
 
-```
+```swift
 import NativePartialSheet
 import SwiftUI
 
