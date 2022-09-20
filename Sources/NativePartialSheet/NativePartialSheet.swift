@@ -78,20 +78,8 @@ public class NativePartialSheetController<Content>: UIHostingController<Content>
     }
 }
 
-extension UISheetPresentationController.Detent {
-    var myIdentifier: Identifier {
-        if #available(iOS 16.0, *) {
-            return self.identifier
-        } else {
-            let test = value(forKey: "identifier")
-            debugPrint("ffdf")
-            return test as! Identifier
-        }
-    }
-}
-
 public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresentable where Content : View {
-    private let content: Content
+    private let content: () -> Content
     let detents: [Detent]
     let preferredCornerRadius: CGFloat?
     let prefersGrabberVisible: Bool
@@ -110,9 +98,9 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
         widthFollowsPreferredContentSizeWhenEdgeAttached: Bool = false,
         largestUndimmedDetent: Detent? = nil,
         selectedDetent: Binding<Detent?> = .init(get: { nil }, set: { _ in }),
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: @escaping () -> Content
     ) {
-        self.content = content()
+        self.content = content
         self.detents = detents
         self.preferredCornerRadius = preferredCornerRadius
         self.prefersGrabberVisible = prefersGrabberVisible
@@ -124,7 +112,7 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
     }
 
     public func makeUIViewController(context: Context) -> NativePartialSheetController<Content> {
-        let viewController = NativePartialSheetController(rootView: content)
+        let viewController = NativePartialSheetController(rootView: content())
         viewController.prefs = self
         return viewController
     }
@@ -136,6 +124,6 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
                 presentation.selectedDetentIdentifier = selectedDetent.wrappedValue?.id
             }
         }
-        
+        viewController.rootView = content()
     }
 }
