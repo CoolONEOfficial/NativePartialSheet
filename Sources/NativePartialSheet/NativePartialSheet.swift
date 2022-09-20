@@ -3,7 +3,7 @@ import NativePartialSheetHelper
 import UIKit
 import SwiftUI
 
-public enum Detent {
+public enum Detent: Equatable {
     case medium
     case large
     case custom(id: String = UUID().uuidString, constant: CGFloat)
