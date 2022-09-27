@@ -86,7 +86,8 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
     let prefersEdgeAttachedInCompactHeight: Bool
     let prefersScrollingExpandsWhenScrolledToEdge: Bool
     let widthFollowsPreferredContentSizeWhenEdgeAttached: Bool
-    var largestUndimmedDetent: Detent?
+    let disableInteractiveDismiss: Bool
+    let largestUndimmedDetent: Detent?
     let selectedDetent: Binding<Detent?>
     
     public init(
@@ -96,6 +97,7 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
         prefersEdgeAttachedInCompactHeight: Bool = false,
         prefersScrollingExpandsWhenScrolledToEdge: Bool = true,
         widthFollowsPreferredContentSizeWhenEdgeAttached: Bool = false,
+        disableInteractiveDismiss: Bool = false,
         largestUndimmedDetent: Detent? = nil,
         selectedDetent: Binding<Detent?> = .init(get: { nil }, set: { _ in }),
         @ViewBuilder content: @escaping () -> Content
@@ -104,6 +106,7 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
         self.detents = detents
         self.preferredCornerRadius = preferredCornerRadius
         self.prefersGrabberVisible = prefersGrabberVisible
+        self.disableInteractiveDismiss = disableInteractiveDismiss
         self.prefersEdgeAttachedInCompactHeight = prefersEdgeAttachedInCompactHeight
         self.prefersScrollingExpandsWhenScrolledToEdge = prefersScrollingExpandsWhenScrolledToEdge
         self.widthFollowsPreferredContentSizeWhenEdgeAttached = widthFollowsPreferredContentSizeWhenEdgeAttached
@@ -124,6 +127,7 @@ public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresen
                 presentation.selectedDetentIdentifier = selectedDetent.wrappedValue?.id
             }
         }
+        viewController.isModalInPresentation = disableInteractiveDismiss
         viewController.rootView = content()
     }
 }
