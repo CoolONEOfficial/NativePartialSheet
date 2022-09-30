@@ -2,132 +2,120 @@ import Foundation
 import NativePartialSheetHelper
 import UIKit
 import SwiftUI
+import os
 
-public enum Detent: Equatable {
-    case medium
-    case large
-    case custom(id: String = UUID().uuidString, constant: CGFloat)
-}
+private let logger = Logger(
+    subsystem: Bundle.main.bundleIdentifier!,
+    category: "NativePartialSheet"
+)
 
-extension Detent {
-    public var id: UISheetPresentationController.Detent.Identifier {
-        switch self {
-        case .medium:
-            return .medium
-
-        case .large:
-            return .large
-
-        case let .custom(id, _):
-            return .init(id)
-        }
-    }
-
-    var system: UISheetPresentationController.Detent {
-        switch self {
-        case .medium:
-            return .medium()
-
-        case .large:
-            return .large()
-
-        case let .custom(id, constant):
-            if #available(iOS 16.0, *) {
-                return .custom(identifier: .init(rawValue: id), resolver: {_ in constant})
-            } else {
-                return ._detent(withIdentifier: id, constant: constant)
-            }
-        }
-    }
-}
-
-private protocol Preferences {
-    var detents: [Detent] { get }
-    var preferredCornerRadius: CGFloat? { get }
-    var prefersGrabberVisible: Bool { get }
-    var prefersEdgeAttachedInCompactHeight: Bool { get }
-    var prefersScrollingExpandsWhenScrolledToEdge: Bool { get }
-    var widthFollowsPreferredContentSizeWhenEdgeAttached: Bool { get }
-    var largestUndimmedDetent: Detent? { get }
-    var selectedDetent: Binding<Detent?> { get }
-}
-
-public class NativePartialSheetController<Content>: UIHostingController<Content>, UISheetPresentationControllerDelegate where Content : View {
-    fileprivate var prefs: Preferences?
-
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        if let presentation = sheetPresentationController,
-           let prefs = prefs {
-            presentation.detents = prefs.detents.map(\.system)
-            presentation.prefersGrabberVisible = prefs.prefersGrabberVisible
-            presentation.largestUndimmedDetentIdentifier = prefs.largestUndimmedDetent?.id
-            presentation.preferredCornerRadius = prefs.preferredCornerRadius
-            presentation.prefersEdgeAttachedInCompactHeight = prefs.prefersEdgeAttachedInCompactHeight
-            presentation.prefersScrollingExpandsWhenScrolledToEdge = prefs.prefersScrollingExpandsWhenScrolledToEdge
-            presentation.widthFollowsPreferredContentSizeWhenEdgeAttached = prefs.widthFollowsPreferredContentSizeWhenEdgeAttached
-            presentation.selectedDetentIdentifier = prefs.selectedDetent.wrappedValue?.id
-            presentation.delegate = self
-        }
-        isModalInPresentation = true
-    }
+struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
     
-    public func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
-        prefs?.selectedDetent.wrappedValue = prefs?.detents.first { $0.id == sheetPresentationController.selectedDetentIdentifier }
-    }
-}
+    private let prefs: Preferences<PrefContent>
 
-public struct NativePartialSheet<Content>: Preferences, UIViewControllerRepresentable where Content : View {
-    private let content: () -> Content
-    let detents: [Detent]
-    let preferredCornerRadius: CGFloat?
-    let prefersGrabberVisible: Bool
-    let prefersEdgeAttachedInCompactHeight: Bool
-    let prefersScrollingExpandsWhenScrolledToEdge: Bool
-    let widthFollowsPreferredContentSizeWhenEdgeAttached: Bool
-    let disableInteractiveDismiss: Bool
-    let largestUndimmedDetent: Detent?
-    let selectedDetent: Binding<Detent?>
-    
-    public init(
-        detents: [Detent] = [.medium, .large],
-        preferredCornerRadius: CGFloat? = nil,
-        prefersGrabberVisible: Bool = false,
-        prefersEdgeAttachedInCompactHeight: Bool = false,
-        prefersScrollingExpandsWhenScrolledToEdge: Bool = true,
-        widthFollowsPreferredContentSizeWhenEdgeAttached: Bool = false,
-        disableInteractiveDismiss: Bool = false,
-        largestUndimmedDetent: Detent? = nil,
-        selectedDetent: Binding<Detent?> = .init(get: { nil }, set: { _ in }),
-        @ViewBuilder content: @escaping () -> Content
+    init(
+        _ prefs: Preferences<PrefContent>
     ) {
-        self.content = content
-        self.detents = detents
-        self.preferredCornerRadius = preferredCornerRadius
-        self.prefersGrabberVisible = prefersGrabberVisible
-        self.disableInteractiveDismiss = disableInteractiveDismiss
-        self.prefersEdgeAttachedInCompactHeight = prefersEdgeAttachedInCompactHeight
-        self.prefersScrollingExpandsWhenScrolledToEdge = prefersScrollingExpandsWhenScrolledToEdge
-        self.widthFollowsPreferredContentSizeWhenEdgeAttached = widthFollowsPreferredContentSizeWhenEdgeAttached
-        self.largestUndimmedDetent = largestUndimmedDetent
-        self.selectedDetent = selectedDetent
+        self.prefs = prefs
     }
-
-    public func makeUIViewController(context: Context) -> NativePartialSheetController<Content> {
-        let viewController = NativePartialSheetController(rootView: content())
-        viewController.prefs = self
-        return viewController
+    
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        return view
     }
+    
+    @ViewBuilder
+    var rootView: some View {
+        if prefs.isPresented.wrappedValue {
+            prefs.content()
+        }
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        let viewController = UIViewController()
 
-    public func updateUIViewController(_ viewController: NativePartialSheetController<Content>, context: Context) {
-        if let presentation = viewController.sheetPresentationController {
-            presentation.detents = detents.map(\.system)
-            presentation.animateChanges {
-                presentation.selectedDetentIdentifier = selectedDetent.wrappedValue?.id
+        let hostingController = UIHostingController(rootView: rootView)
+        
+        viewController.addChild(hostingController)
+        viewController.view.addSubview(hostingController.view)
+
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        hostingController.view.leftAnchor.constraint(equalTo: viewController.view.leftAnchor).isActive = true
+        hostingController.view.topAnchor.constraint(equalTo: viewController.view.topAnchor).isActive = true
+        hostingController.view.rightAnchor.constraint(equalTo: viewController.view.rightAnchor).isActive = true
+        hostingController.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor).isActive = true
+        hostingController.didMove(toParent: viewController)
+        
+        viewController.isModalInPresentation = prefs.interactiveDismissDisabled
+        
+        if let sheetController = viewController.presentationController as? UISheetPresentationController {
+            sheetController.detents = prefs.detents.map(\.system)
+            sheetController.prefersGrabberVisible = prefs.presentationDragIndicator == .visible
+            sheetController.largestUndimmedDetentIdentifier = prefs.largestUndimmedDetent?.id
+            sheetController.preferredCornerRadius = prefs.preferredCornerRadius
+            sheetController.prefersEdgeAttachedInCompactHeight = prefs.prefersEdgeAttachedInCompactHeight
+            sheetController.prefersScrollingExpandsWhenScrolledToEdge = prefs.prefersScrollingExpandsWhenScrolledToEdge
+            sheetController.widthFollowsPreferredContentSizeWhenEdgeAttached = prefs.widthFollowsPreferredContentSizeWhenEdgeAttached
+            sheetController.selectedDetentIdentifier = prefs.selectedDetent.wrappedValue.id
+            sheetController.delegate = context.coordinator
+        }
+        
+        guard let window = uiView.window ?? UIApplication.shared.keyWindow else {
+            logger.warning("Root window not found")
+            return
+        }
+        guard let rootViewController = window.rootViewController ?? UIApplication.shared.keyWindowPresentedController else {
+            logger.warning("Root VC not found")
+            return
+        }
+        
+        let presentedViewController = rootViewController.presentedViewController
+        
+        let isPresented = prefs.isPresented.wrappedValue
+        let actual = presentedViewController != nil
+        if actual != isPresented {
+            if isPresented {
+                rootViewController.present(viewController, animated: true)
+            } else {
+                rootViewController.dismiss(animated: true)
+            }
+        } else if actual, let sheetController = presentedViewController?.presentationController as? UISheetPresentationController {
+            sheetController.animateChanges {
+                sheetController.selectedDetentIdentifier = prefs.selectedDetent.wrappedValue.id
             }
         }
-        viewController.isModalInPresentation = disableInteractiveDismiss
-        viewController.rootView = content()
     }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UISheetPresentationControllerDelegate, UIAdaptivePresentationControllerDelegate {
+        private let parent: NativePartialSheetView
+        
+        init(_ parent: NativePartialSheetView) {
+            self.parent = parent
+        }
+        
+        func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+            parent.prefs.isPresented.wrappedValue = false
+            parent.prefs.onDidDismiss?()
+        }
+        
+        func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
+            guard let id = sheetPresentationController.selectedDetentIdentifier else {
+                return
+            }
+            guard let detent = Detent(id: id) else {
+                logger.warning("Cannot parse height from detent identifier")
+                return
+            }
+            parent.prefs.selectedDetent.wrappedValue = detent
+        }
+        
+        func presentationControllerWillDismiss(_ presentationController: UIPresentationController) {
+            parent.prefs.onWillDismiss?()
+        }
+    }
+    
 }
