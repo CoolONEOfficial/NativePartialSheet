@@ -26,9 +26,18 @@ public struct SheetWrapperView<Content: View, PrefContent: View>: View {
 }
 
 public extension SheetWrapperView {
+    func sheetColor(_ color: UIColor) -> SheetWrapperView {
+        prefs.sheetColor = color
+        return self
+    }
+    
+    func sheetShadowDisabled(_ isDisabled: Bool) -> SheetWrapperView {
+        prefs.sheetShadowDisabled = isDisabled
+        return self
+    }
+    
     func interactiveDismissDisabled(
         _ isDisabled: Bool = true,
-        onDidAttemptToDismiss: (() -> Void)? = nil,
         onWillDismiss: (() -> Void)? = nil,
         onDidDismiss: (() -> Void)? = nil
     ) -> SheetWrapperView {

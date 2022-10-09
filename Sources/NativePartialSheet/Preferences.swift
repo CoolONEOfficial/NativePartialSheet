@@ -31,7 +31,9 @@ final class Preferences<Content: View> {
     var prefersScrollingExpandsWhenScrolledToEdge = true
     var widthFollowsPreferredContentSizeWhenEdgeAttached = false
     var largestUndimmedDetent: Detent?
-    var interactiveDismissDisabled: Bool = false
+    var interactiveDismissDisabled = false
     var onWillDismiss: (() -> Void)?
     var onDidDismiss: (() -> Void)?
+    var sheetShadowDisabled = false
+    var sheetColor: UIColor = .systemBackground
 }

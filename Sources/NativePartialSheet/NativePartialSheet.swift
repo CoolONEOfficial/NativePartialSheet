@@ -9,6 +9,18 @@ private let logger = Logger(
     category: "NativePartialSheet"
 )
 
+class SheetViewController: UIViewController {
+    var sheetShadowDisabled: Bool!
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if sheetShadowDisabled,
+           let shadow = view.firstParentWithClassName("UIDropShadowView") {
+            shadow.layer.shadowColor = UIColor.clear.cgColor
+        }
+    }
+}
+
 struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
     
     private let prefs: Preferences<PrefContent>
@@ -32,13 +44,15 @@ struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        let viewController = UIViewController()
+        let viewController = SheetViewController()
+        viewController.sheetShadowDisabled = prefs.sheetShadowDisabled
 
         let hostingController = UIHostingController(rootView: rootView)
         
         viewController.addChild(hostingController)
         viewController.view.addSubview(hostingController.view)
 
+        hostingController.view.backgroundColor = prefs.sheetColor
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         hostingController.view.leftAnchor.constraint(equalTo: viewController.view.leftAnchor).isActive = true
         hostingController.view.topAnchor.constraint(equalTo: viewController.view.topAnchor).isActive = true
