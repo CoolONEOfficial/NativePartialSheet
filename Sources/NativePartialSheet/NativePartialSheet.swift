@@ -10,13 +10,22 @@ private let logger = Logger(
 )
 
 class SheetViewController: UIViewController {
-    var sheetShadowDisabled: Bool!
+    var sheetShadowColor: UIColor?
+    var sheetShadowOffset: CGSize?
+    var sheetShadowRadius: CGFloat?
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        if sheetShadowDisabled,
-           let shadow = view.firstParentWithClassName("UIDropShadowView") {
-            shadow.layer.shadowColor = UIColor.clear.cgColor
+        if let shadow = view.firstParentWithClassName("UIDropShadowView") {
+            if let color = sheetShadowColor {
+                shadow.layer.shadowColor = color.cgColor
+            }
+            if let offset = sheetShadowOffset {
+                shadow.layer.shadowOffset = offset
+            }
+            if let radius = sheetShadowRadius {
+                shadow.layer.shadowRadius = radius
+            }
         }
     }
 }
@@ -45,7 +54,9 @@ struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
     
     func updateUIView(_ uiView: UIView, context: Context) {
         let viewController = SheetViewController()
-        viewController.sheetShadowDisabled = prefs.sheetShadowDisabled
+        viewController.sheetShadowColor = prefs.sheetShadowColor
+        viewController.sheetShadowOffset = prefs.sheetShadowOffset
+        viewController.sheetShadowRadius = prefs.sheetShadowRadius
 
         let hostingController = UIHostingController(rootView: rootView)
         

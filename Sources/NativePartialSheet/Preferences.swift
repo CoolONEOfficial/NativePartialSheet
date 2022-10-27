@@ -34,6 +34,8 @@ final class Preferences<Content: View> {
     var interactiveDismissDisabled = false
     var onWillDismiss: (() -> Void)?
     var onDidDismiss: (() -> Void)?
-    var sheetShadowDisabled = false
+    var sheetShadowColor: UIColor?
+    var sheetShadowOffset: CGSize?
+    var sheetShadowRadius: CGFloat?
     var sheetColor: UIColor = .systemBackground
 }
