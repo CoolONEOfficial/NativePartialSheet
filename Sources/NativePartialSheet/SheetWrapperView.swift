@@ -31,8 +31,14 @@ public extension SheetWrapperView {
         return self
     }
     
-    func sheetShadowDisabled(_ isDisabled: Bool) -> SheetWrapperView {
-        prefs.sheetShadowDisabled = isDisabled
+    func sheetShadow(
+        color: UIColor? = nil,
+        offset: CGSize? = nil,
+        radius: CGFloat? = nil
+    ) -> SheetWrapperView {
+        prefs.sheetShadowColor = color
+        prefs.sheetShadowOffset = offset
+        prefs.sheetShadowRadius = radius
         return self
     }
     
