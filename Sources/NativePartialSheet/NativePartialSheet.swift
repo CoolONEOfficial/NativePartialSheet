@@ -48,7 +48,9 @@ struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
     @ViewBuilder
     var rootView: some View {
         if prefs.isPresented.wrappedValue {
-            prefs.content()
+            prefs.content().onDisappear {
+                prefs.isPresented.wrappedValue = false // bugfix for `https://github.com/CoolONEOfficial/NativePartialSheet/issues/2`
+            }
         }
     }
     
