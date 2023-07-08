@@ -18,9 +18,8 @@ public struct SheetWrapperView<Content: View, PrefContent: View>: View {
     private let content: Content
     
     public var body: some View {
-        ZStack {
+        content.background {
             NativePartialSheetView(prefs)
-            content
         }
     }
 }
