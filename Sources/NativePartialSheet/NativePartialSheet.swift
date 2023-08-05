@@ -103,7 +103,7 @@ struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
         if actual != isPresented {
             if isPresented {
                 rootViewController.present(viewController, animated: true)
-            } else {
+            } else if presentedViewController is SheetViewController {
                 rootViewController.dismiss(animated: true)
             }
         } else if actual, let sheetController = presentedViewController?.presentationController as? UISheetPresentationController {
