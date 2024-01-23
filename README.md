@@ -25,7 +25,7 @@ struct ContentView: View {
             .onTapGesture {
                 isPresented = true
             }
-            .sheet(isPresented: $isPresented) {
+            .nativePartialSheet(isPresented: $isPresented) {
                 Text("Sheet content")
             }
             .presentationDetents([ .large, .medium ])
@@ -47,7 +47,7 @@ struct ContentView: View {
             .onTapGesture {
                 detent = .medium
             }
-            .sheet(selectedDetent: $detent) { detent in
+            .nativePartialSheet(selectedDetent: $detent) { detent in
                 switch detent {
                 case .medium:
                     Text("Medium")
@@ -79,7 +79,7 @@ struct ContentView: View {
             .onTapGesture {
                 isPresented = true
             }
-            .sheet(isPresented: $isPresented) {
+            .nativePartialSheet(isPresented: $isPresented) {
                 Text("Sheet content")
             }
             .presentationDetents([ .medium, .large ], selection: $detent)
@@ -121,7 +121,7 @@ struct ContentView: View {
             .onTapGesture {
                 item = .init(content: "Test content")
             }
-            .sheet(item: $item) { item in
+            .nativePartialSheet(item: $item) { item in
                 VStack {
                     Button("recreate") {
                         self.item = .init(content: "Recreated content")
@@ -155,7 +155,7 @@ struct ContentView: View {
             .onTapGesture {
                 detent = .customSmall
             }
-            .sheet(selectedDetent: $detent) { detent in
+            .nativePartialSheet(selectedDetent: $detent) { detent in
                 switch detent {
                 case .medium:
                     Text("Medium")
@@ -189,7 +189,7 @@ struct ContentView: View {
                 detents.insert(dynamic)
                 detent = dynamic
             }
-            .sheet(selectedDetent: $detent) { detent in
+            .nativePartialSheet(selectedDetent: $detent) { detent in
                 switch detent {
                 case .height(_):
                     Text("Dynamic")
