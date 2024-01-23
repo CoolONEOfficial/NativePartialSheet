@@ -20,7 +20,7 @@ public struct UnwrapView<T, Content: View>: View {
 }
 
 public extension View {
-    func sheet<Content: View>(
+    func nativePartialSheet<Content: View>(
         isPresented: Binding<Bool>,
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping () -> Content
@@ -33,7 +33,7 @@ public extension View {
         return SheetWrapperView(prefs: prefs, content: self)
     }
     
-    func sheet<Content: View>(
+    func nativePartialSheet<Content: View>(
         selectedDetent: Binding<Detent?>,
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping (Detent) -> Content
@@ -61,7 +61,7 @@ public extension View {
         return SheetWrapperView(prefs: prefs, content: self)
     }
     
-    func sheet<Item: Identifiable, Content: View>(
+    func nativePartialSheet<Item: Identifiable, Content: View>(
         item: Binding<Item?>,
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping (Item) -> Content
