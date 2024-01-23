@@ -31,6 +31,7 @@ class SheetViewController: UIViewController {
 }
 
 struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
+    @State private var isPresented = false
     
     private let prefs: Preferences<PrefContent>
 
@@ -96,19 +97,49 @@ struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
             return
         }
         
+        guard self.isPresented != prefs.isPresented.wrappedValue else {
+            return
+        }
+      
         let presentedViewController = rootViewController.presentedViewController
         
         let isPresented = prefs.isPresented.wrappedValue
-        let actual = presentedViewController != nil
-        if actual != isPresented {
+        
+        DispatchQueue.main.async {
             if isPresented {
+                
+                guard !self.isPresented
+                else { return }
+                
+                guard rootViewController.presentedViewController == nil
+                else {
+                    var vc = rootViewController.presentedViewController
+                    while vc != nil {
+                        if vc?.presentedViewController == nil {
+                            break
+                        } else {
+                            vc = vc?.presentedViewController
+                        }
+                    }
+                    
+                    self.isPresented = true
+                    vc?.present(viewController, animated: true)
+                  
+                    return
+                }
+                
+                self.isPresented = true
                 rootViewController.present(viewController, animated: true)
-            } else if presentedViewController is SheetViewController {
+            } 
+            else if presentedViewController is SheetViewController {
+                self.isPresented = false
                 rootViewController.dismiss(animated: true)
             }
-        } else if actual, let sheetController = presentedViewController?.presentationController as? UISheetPresentationController {
-            sheetController.animateChanges {
-                sheetController.selectedDetentIdentifier = prefs.selectedDetent.wrappedValue.id
+            
+            if let sheetController = presentedViewController?.presentationController as? UISheetPresentationController {
+                sheetController.animateChanges {
+                    sheetController.selectedDetentIdentifier = prefs.selectedDetent.wrappedValue.id
+                }
             }
         }
     }
@@ -125,6 +156,7 @@ struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
         }
         
         func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+            parent.isPresented = false
             parent.prefs.isPresented.wrappedValue = false
             parent.prefs.onDidDismiss?()
         }
