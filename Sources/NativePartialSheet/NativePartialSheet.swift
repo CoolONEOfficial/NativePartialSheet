@@ -156,8 +156,6 @@ struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
         }
         
         func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-            parent.isPresented = false
-            parent.prefs.isPresented.wrappedValue = false
             parent.prefs.onDidDismiss?()
         }
         
@@ -173,6 +171,8 @@ struct NativePartialSheetView<PrefContent: View>: UIViewRepresentable {
         }
         
         func presentationControllerWillDismiss(_ presentationController: UIPresentationController) {
+            parent.isPresented = false
+            parent.prefs.isPresented.wrappedValue = false
             parent.prefs.onWillDismiss?()
         }
     }
